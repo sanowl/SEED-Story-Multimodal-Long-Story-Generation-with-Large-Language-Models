@@ -41,7 +41,7 @@ def train_step(state: train_state.TrainState, batch: Tuple, rng: jnp.ndarray) ->
     grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
     (loss, logits), grads = grad_fn(state.params)
     state = state.apply_gradients(grads=grads)
-    metrics = compute_metrics(logits, targets)
+    metrics = compute_metrics(logits, batch[2])  # batch[2] is targets
     return state, metrics
 
 def train_model(config: Any, model: Any, train_ds: Any, eval_ds: Any, eval_fn: Callable) -> train_state.TrainState:

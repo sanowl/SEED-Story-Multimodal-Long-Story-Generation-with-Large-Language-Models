@@ -2,7 +2,7 @@ import streamlit as st
 import jax.numpy as jnp
 from models.seed_story import SEEDStory
 from config import SEEDStoryConfig
-from image_utils import load_and_preprocess_image
+from utils.image_utils import load_and_preprocess_image  
 import tempfile
 from PIL import Image
 import io

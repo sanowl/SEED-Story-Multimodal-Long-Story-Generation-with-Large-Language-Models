@@ -1,12 +1,12 @@
 import jax
+import argparse
+import sys
 from config import SEEDStoryConfig
 from models.seed_story import SEEDStory
 from data.data_loader import load_data
-from train import train_model
-from evaluate import evaluate_model
-from logging_utils import setup_logger, log_exception
-import sys
-import argparse
+from training.train import train_model
+from training.evaluate import evaluate_model
+from utils.logging_utils import setup_logger, log_exception
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train SEEDStory model")

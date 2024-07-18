@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+import optax
 from flax.training import train_state
 from flax.training.common_utils import shard
 from typing import Any, Dict
