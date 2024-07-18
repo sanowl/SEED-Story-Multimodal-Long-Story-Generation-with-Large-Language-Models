@@ -1,8 +1,8 @@
 """
-SEED-Story: Multimodal Long Story Generation with Large Language Models
-========================================================================
+SEED-Story: Multimodal Long Story Generation with Large Language Models (JAX Implementation)
+============================================================================================
 
-This module implements the SEED-Story model, which combines vision and language
+This module implements the SEED-Story model using JAX and Flax, combining vision and language
 models to generate coherent, long-form stories from images and text prompts.
 
 Classes:
@@ -23,33 +23,27 @@ Attributes:
     dropout_rate (float): Dropout rate for regularization.
     layer_scale_init_value (float): Initial value for layer scale.
     groups (int): Number of groups for Group Normalization.
+    batch_size (int): Batch size for training.
+    learning_rate (float): Learning rate for optimizer.
+    weight_decay (float): Weight decay for optimizer.
+    num_epochs (int): Number of training epochs.
+    image_size (int): Size of input images.
 
 GroupNorm
 ---------
-Implements Group Normalization layer.
+Implements Group Normalization layer using Flax.
 
 Methods:
-    __init__(groups: int = 32, epsilon: float = 1e-5): Initialize the layer.
-    build(input_shape: tf.TensorShape): Build the layer.
-    call(x: tf.Tensor) -> tf.Tensor: Apply group normalization.
-
-PositionalEncoding
-------------------
-Implements positional encoding for transformer models.
-
-Methods:
-    __init__(max_position: int, d_model: int): Initialize the layer.
-    positional_encoding(position: int, d_model: int) -> tf.Tensor: Generate positional encodings.
-    get_angles(pos: tf.Tensor, i: tf.Tensor, d_model: int) -> tf.Tensor: Compute angle rates.
-    call(inputs: tf.Tensor) -> tf.Tensor: Apply positional encoding to inputs.
+    __init__(groups: int, epsilon: float = 1e-5): Initialize the layer.
+    __call__(x): Apply group normalization.
 
 LayerScale
 ----------
 Implements Layer Scale for improved training stability.
 
 Methods:
-    __init__(dim: int, init_values: float = 1e-5, inplace: bool = False): Initialize the layer.
-    call(x: tf.Tensor) -> tf.Tensor: Apply layer scale.
+    __init__(dim: int, init_values: float = 1e-5): Initialize the layer.
+    __call__(x): Apply layer scale.
 
 QFormerLayer
 ------------
@@ -57,7 +51,7 @@ Implements a single layer of the QFormer.
 
 Methods:
     __init__(config: SEEDStoryConfig): Initialize the layer.
-    call(x: tf.Tensor, queries: tf.Tensor, training: bool = False) -> tf.Tensor: Process inputs through the layer.
+    __call__(x, queries, training=False): Process inputs through the layer.
 
 QFormer
 -------
@@ -65,7 +59,7 @@ Implements the full QFormer model.
 
 Methods:
     __init__(config: SEEDStoryConfig): Initialize the model.
-    call(x: tf.Tensor, training: bool = False) -> tf.Tensor: Process inputs through the QFormer.
+    __call__(x, training=False): Process inputs through the QFormer.
 
 MultimodalAttentionSink
 -----------------------
@@ -73,7 +67,7 @@ Implements the Multimodal Attention Sink mechanism.
 
 Methods:
     __init__(max_length: int, sink_size: int): Initialize the layer.
-    call(x: tf.Tensor, sink_tokens: tf.Tensor) -> tf.Tensor: Apply attention sink mechanism.
+    __call__(x, sink_tokens): Apply attention sink mechanism.
 
 SEEDStory
 ---------
@@ -81,16 +75,25 @@ Main class that implements the SEED-Story model.
 
 Methods:
     __init__(config: SEEDStoryConfig): Initialize the model.
-    encode_image(image: tf.Tensor) -> tf.Tensor: Encode input image.
-    generate_story(image_features: tf.Tensor, prompt: str, max_length: int = 100) -> str: Generate story from image features and prompt.
-    call(inputs: Tuple[tf.Tensor, str], training: bool = False) -> str: Main call method for story generation.
+    setup(): Set up the model components.
+    encode_image(image): Encode input image.
+    generate_story(image_features, prompt, max_length=100): Generate story from image features and prompt.
+    __call__(inputs, training=False): Main call method for story generation.
 
 Functions:
 ----------
 
-train_step(model: SEEDStory, optimizer: tfa.optimizers.AdamW, 
-           images: tf.Tensor, prompts: List[str], targets: tf.Tensor) -> tf.Tensor
+load_and_preprocess_image(image_path: str, target_size: Tuple[int, int] = (224, 224)) -> np.ndarray
+    Loads and preprocesses an image for input to the model.
+
+create_train_state(config, model, rng)
+    Creates the initial training state.
+
+train_step(state, batch, rng)
     Performs a single training step.
+
+evaluate_model(state, eval_ds)
+    Evaluates the model on a validation dataset.
 
 main()
     Main function to initialize the model, perform training, and generate a sample story.
@@ -103,13 +106,18 @@ initialize the SEEDStory model with this config, and call the model with an imag
 Example:
     config = SEEDStoryConfig()
     model = SEEDStory(config)
-    image = load_and_preprocess_image("example.jpg")
+    rng = jax.random.PRNGKey(0)
+    state = create_train_state(config, model, rng)
+    
+    image_path = "example.jpg"
+    image = load_and_preprocess_image(image_path, target_size=(config.image_size, config.image_size))
+    image = jnp.array(image)[None, ...]  # Add batch dimension
     prompt = "Once upon a time,"
-    generated_story = model((image, prompt))
+    generated_story = model.apply({'params': state.params}, (image, prompt))
     print(generated_story)
 
 Note:
 -----
-This implementation requires TensorFlow, TensorFlow Addons, and the Transformers library.
+This implementation requires JAX, Flax, Optax, and the Transformers library.
 Ensure all dependencies are installed before running the code.
 """
