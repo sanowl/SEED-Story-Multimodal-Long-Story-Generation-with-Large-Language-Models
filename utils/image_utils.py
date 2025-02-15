@@ -1,10 +1,10 @@
 import numpy as np
 from PIL import Image, ImageOps, ImageEnhance
-import requests
 from io import BytesIO
 from typing import Tuple, Union, Optional
 import logging
 from functools import lru_cache
+from security import safe_requests
 
 @lru_cache(maxsize=100)
 def load_and_preprocess_image(
@@ -40,7 +40,7 @@ def load_and_preprocess_image(
 def _load_image(image_path: Union[str, bytes]) -> Image.Image:
     if isinstance(image_path, str):
         if image_path.startswith(('http://', 'https://')):
-            response = requests.get(image_path, timeout=10)
+            response = safe_requests.get(image_path, timeout=10)
             response.raise_for_status()
             img = Image.open(BytesIO(response.content))
         else:
