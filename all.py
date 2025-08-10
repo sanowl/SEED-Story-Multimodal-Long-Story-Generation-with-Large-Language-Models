@@ -43,7 +43,7 @@ def load_and_preprocess_image(image_path: str, target_size: Tuple[int, int] = (2
     np.ndarray: Preprocessed image as a numpy array.
     """
     if image_path.startswith(('http://', 'https://')):
-        response = requests.get(image_path)
+        response = requests.get(image_path, timeout=60)
         img = Image.open(BytesIO(response.content))
     else:
         img = Image.open(image_path)
